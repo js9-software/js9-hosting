@@ -1,0 +1,2 @@
+prod-a.js9.org ansible_user=ubuntu public_ip_v4=150.136.163.175
+prod-x.js9.org ansible_user=ubuntu public_ip_v4=143.47.98.233

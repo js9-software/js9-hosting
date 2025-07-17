@@ -1,0 +1,109 @@
+- name: Configure common js9.org server tasks
+  hosts: all
+
+  tasks:
+    - name: Set host name
+      become: yes
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname_short }}"
+    - name: Add the FQDN and hostname to hosts file
+      become: yes
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ public_ip_v4 }} {{ inventory_hostname_short }} {{ inventory_hostname }}"
+        create: yes
+    - name: Set time zone
+      become: yes
+      community.general.timezone:
+        name: America/New_York
+    - name: Disable root SSH
+      become: yes
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+        state: present
+      notify: restart ssh
+    - name: Disable SSH password authentication
+      become: yes
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+      notify: restart ssh
+    - name: Install required packages
+      become: yes
+      ansible.builtin.apt:
+        pkg:
+          - vim
+          - btop
+          - unattended-upgrades
+          - docker.io
+          - docker-compose-v2
+          - docker-buildx
+          - fzf
+        update_cache: yes
+        cache_valid_time: 3600
+    - name: Add the user ubuntu to the `docker` group
+      # The `docker` group is created by the `docker.io` package.
+      become: yes
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: yes
+    - name: Enable fzf shell integration for user ubuntu
+      ansible.builtin.blockinfile:
+        path: /home/ubuntu/.bashrc
+        marker: "# {mark} ANSIBLE MANAGED ZSH FZF BLOCK"
+        block: |
+          source /usr/share/doc/fzf/examples/key-bindings.zsh
+          source /usr/share/doc/fzf/examples/completion.zsh
+    - name: Ensure that the apps directory exists.
+      become: yes
+      ansible.builtin.file:
+        path: /apps
+        state: directory
+        owner: ubuntu
+    - name: Ensure that the container apps config and data directories exist.
+      tags:
+        - apps
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+      loop:
+        - /apps/caddy
+    - name: Copy docker compose files and related
+      tags:
+        - apps
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - src: files/caddy-docker-compose.yml
+          dest: /apps/caddy/compose.yml
+    - name: Create the caddy docker network
+      community.docker.docker_network:
+        name: caddy
+        
+  handlers:
+    - name: restart ssh
+      become: yes
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+
+- name: Configure prod-x.js9.org
+  hosts: prod-x.js9.org
+  
+  tasks:
+    - name: Git checkout
+      ansible.builtin.git:
+        repo: 'https://github.com/js9-software/js9-nso.git'
+        dest: /apps/js9-nso
+    - name: Set js9-nso repo to update working copy on push
+      community.general.git_config:
+        name: receive.denyCurrentBranch
+        value: updateInstead
+        scope: local
+        repo: /apps/js9-nso
