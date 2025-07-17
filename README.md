@@ -75,6 +75,12 @@ To run the Ansible playbook:
 ansible-playbook main.yml
 ```
 
+To test the playbook (Dry run):
+
+```
+$ ansible-playbook --check --diff main.yml
+```
+
 ## Web application lifecycle
 
 As of 2025-06, all containerized applications (Caddy reverse proxy, www.js9.org, and nso.js9.org) are started, stopped, restarted, and updated manually.
