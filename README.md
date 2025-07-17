@@ -58,6 +58,8 @@ For encrypted web traffic:
 - IP Protocol: `TCP`
 - Destination port range: `443`
 
+Both servers share the same virtual cloud network, so these settings are shared.
+
 ## Server configuration with Ansible
 
 The following server configuration is done via Ansible:
