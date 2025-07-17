@@ -93,6 +93,26 @@
         name: ssh
         state: restarted
 
+- name: Configure prod-a.js9.org
+  hosts: prod-a.js9.org
+  
+  tasks:
+    - name: Ensure that the container apps config and data directories exist.
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+      loop:
+        - /apps/js9
+    - name: Copy docker compose files and related
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - src: files/js9-docker-compose.yml
+          dest: /apps/js9/compose.yml
+        - src: files/js9prefs.js
+          dest: /apps/js9/js9prefs.js
+
 - name: Configure prod-x.js9.org
   hosts: prod-x.js9.org
   
