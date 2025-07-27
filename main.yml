@@ -66,16 +66,12 @@
         state: directory
         owner: ubuntu
     - name: Ensure that the container apps config and data directories exist.
-      tags:
-        - apps
       ansible.builtin.file:
         path: '{{ item }}'
         state: directory
       loop:
         - /apps/caddy
     - name: Copy docker compose files and related
-      tags:
-        - apps
       ansible.builtin.copy:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -85,7 +81,7 @@
     - name: Create the caddy docker network
       community.docker.docker_network:
         name: caddy
-        
+
   handlers:
     - name: restart ssh
       become: yes
